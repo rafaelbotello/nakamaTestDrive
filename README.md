@@ -4,7 +4,15 @@ A Go runtime module for [Nakama](https://heroiclabs.com/docs/nakama/) that lets 
 
 ## Getting started
 
-You need Docker with Docker Compose. To build the module and start the server, run:
+You need Go and Docker with Docker Compose.
+
+The Docker build uses a local `vendor/` folder, which isn't in this repo, so create it first:
+
+```bash
+go mod vendor
+```
+
+Then build the module and start the server:
 
 ```bash
 docker compose up --build
