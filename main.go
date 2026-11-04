@@ -19,8 +19,10 @@ func InitModule(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runti
 	if err != nil {
 		return err
 	}
-
-	//initializer.RegisterRpc("get_profile", GetProfile)
+	err = initializer.RegisterRpc("get_profile", RpcGetProfile)
+	if err != nil {
+		return err
+	}
 
 	logger.Info("Module loaded in %dms", time.Since(initStart).Milliseconds())
 	return nil
