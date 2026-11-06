@@ -23,6 +23,10 @@ func InitModule(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runti
 	if err != nil {
 		return err
 	}
+	err = initializer.RegisterBeforeWriteStorageObjects(BeforeClientWriteRequest)
+	if err != nil {
+		return err
+	}
 
 	logger.Info("Module loaded in %dms", time.Since(initStart).Milliseconds())
 	return nil
