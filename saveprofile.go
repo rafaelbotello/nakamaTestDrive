@@ -34,52 +34,56 @@ func RpcSaveProfile(ctx context.Context, logger runtime.Logger, db *sql.DB, nk r
 		return "", runtime.NewError("unauthenticated", 16)
 	}
 
+	log := logger.WithField("user_id", userID)
+
 	payloadProfile := Profile{}
 
 	if err := json.Unmarshal([]byte(payload), &payloadProfile); err != nil {
-		logger.WithField("user_id", userID).Info("Error unmarshalling payload to JSON: %v", err)
+		log.Info("Error unmarshalling payload to JSON: %v", err)
 		return "", runtime.NewError("Cannot unmarshal type", 3)
 	}
 
 	if payloadProfile == (Profile{}) {
-		logger.WithField("user_id", userID).Info("Empty profile payload")
+		log.Info("Empty profile payload")
 		return "", runtime.NewError("Request is empty, please provide profile fields.", 3)
 	}
 
 	// Payload Validation
 
 	// Display Name
-
 	payloadProfile.DisplayName = strings.TrimSpace(payloadProfile.DisplayName)
 
 	for _, r := range payloadProfile.DisplayName {
 		if !unicode.IsPrint(r) || r == utf8.RuneError {
-			logger.WithField("user_id", userID).Info("Invalid character in display name")
+			log.Info("Invalid character in display name")
 			return "", runtime.NewError("Display name contains invalid characters.", 3)
 		}
 	}
 
 	if utf8.RuneCountInString(payloadProfile.DisplayName) > 32 || utf8.RuneCountInString(payloadProfile.DisplayName) < 3 {
-		logger.WithField("user_id", userID).Info("Display name over the character limit")
+		log.Info("Display name over the character limit")
 		return "", runtime.NewError("Confirm display name is within the acceptable limits 3 - 32 characters.", 3)
 	}
 
 	normalizedName := strings.ToLower(payloadProfile.DisplayName)
 	for i := 0; i < len(protectedWords); i++ {
 		if strings.Contains(normalizedName, protectedWords[i]) {
-			logger.WithField("user_id", userID).Info("Protected word in DisplayName")
+			log.Info("Protected word in DisplayName")
 			return "", runtime.NewError("Invalid Display name please try again.", 3)
 		}
 	}
 
 	// Bio
-
 	if utf8.RuneCountInString(payloadProfile.Bio) > 190 {
-		logger.WithField("user_id", userID).Info("Bio over the character limit")
+		log.Info("Bio over the character limit")
 		return "", runtime.NewError("Character limit exceeded", 3)
 	}
 
 	// Avatar validation == too much sidetracking for now will revisit later
+	if utf8.RuneCountInString(payloadProfile.Avatar) > 190 {
+		log.Info("Avatar url over the character limit")
+		return "", runtime.NewError("Avatar url character limit exceeded", 3)
+	}
 
 	reads := []*runtime.StorageRead{{Collection: "profiles", Key: "profile", UserID: userID}}
 
@@ -90,7 +94,7 @@ func RpcSaveProfile(ctx context.Context, logger runtime.Logger, db *sql.DB, nk r
 		permissionWrite := 0
 		if len(objects) > 0 {
 			if err := json.Unmarshal([]byte(objects[0].Value), &profile); err != nil {
-				logger.WithField("user_id", userID).Error("Error unmarshaling read response type to JSON: %v", err)
+				log.Error("Error unmarshaling read response type to JSON: %v", err)
 				return nil, runtime.NewError("unable to unmarshal read content", 13)
 			}
 			version = objects[0].Version
@@ -102,7 +106,7 @@ func RpcSaveProfile(ctx context.Context, logger runtime.Logger, db *sql.DB, nk r
 
 		value, err := json.Marshal(profile)
 		if err != nil {
-			logger.WithField("user_id", userID).Error("Error marshaling profile changes to JSON: %v", err)
+			log.Error("Error marshaling profile changes to JSON: %v", err)
 			return nil, runtime.NewError("unable to marshal profile", 13)
 		}
 
@@ -120,7 +124,7 @@ func RpcSaveProfile(ctx context.Context, logger runtime.Logger, db *sql.DB, nk r
 	var runtimeErr *runtime.Error
 
 	if err != nil {
-		logger.WithField("user_id", userID).Error("Error saving profile %v", err)
+		log.Error("Error saving profile %v", err)
 		if errors.As(err, &runtimeErr) {
 			return "", runtimeErr
 
@@ -139,7 +143,7 @@ func RpcSaveProfile(ctx context.Context, logger runtime.Logger, db *sql.DB, nk r
 
 	clientRes, err := json.Marshal(res)
 	if err != nil {
-		logger.WithField("user_id", userID).Error("Error marshaling  type to JSON: %v", err)
+		log.Error("Error marshaling  type to JSON: %v", err)
 		return "", runtime.NewError("unable to marshal response", 13)
 	}
 

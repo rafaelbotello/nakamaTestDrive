@@ -9,9 +9,7 @@ import (
 	"github.com/heroiclabs/nakama-common/runtime"
 )
 
-var clientWritableCollections = []string{
-	"settings",
-}
+var clientWritableCollections = []string{}
 
 func BeforeClientWriteRequest(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, in *api.WriteStorageObjectsRequest) (*api.WriteStorageObjectsRequest, error) {
 	userID, _ := ctx.Value(runtime.RUNTIME_CTX_USER_ID).(string)
